@@ -16,14 +16,20 @@ import           Shelly
 import qualified Shelly                    as S
 
 
+-- Settings
+
 castleDir :: IO FilePath
 castleDir = (FS.</> ".castle") <$> getHomeDirectory
+
+-- Shell utilities
 
 cabal_ :: T.Text -> [T.Text] -> Sh ()
 cabal_ = command1_ "cabal" []
 
 sandbox_ :: T.Text -> [T.Text] -> Sh ()
 sandbox_ cmd = cabal_ "sandbox" . (cmd:)
+
+-- Workflow functions
 
 installCastle :: Sh ()
 installCastle = do
@@ -32,6 +38,8 @@ installCastle = do
         mkdirTree $ (filename castle) # leaves ["castles"]
     where (#)    = Node
           leaves = map (# [])
+
+-- Command functions
 
 castleList :: Sh ()
 castleList =   liftIO (fmap (FS.</> "castles") castleDir)
@@ -50,6 +58,7 @@ castleNew castleName = do
             mkdir_p sandboxDir >> chdir sandboxDir
                 (sandbox_ "init" ["--sandbox=" <> toTextIgnore sandboxDir])
 
+-- Main
 
 main :: IO ()
 main = do
@@ -77,6 +86,8 @@ main = do
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
+
+-- Command-line parsing
 
 -- | This is a builder utility for ParserInfo instances.
 pinfo :: Parser a -> String -> InfoMod a -> ParserInfo a
