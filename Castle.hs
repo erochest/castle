@@ -101,10 +101,10 @@ fileOption fields = nullOption (reader (pure . decodeString) <> fields)
 
 data CastleOpts
         = CastleOpts
-        { mode :: CastleMode
+        { mode :: CastleCmd
         } deriving (Show)
 
-data CastleMode
+data CastleCmd
         = ListCmd
         | NewCmd { castleName :: T.Text }
         deriving (Show)
