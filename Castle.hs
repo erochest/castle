@@ -78,9 +78,8 @@ main = do
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
-        newCmd  = pinfo (NewCmd <$> nullOption (  short 'n' <> long "name"
+        newCmd  = pinfo (NewCmd <$> textOption (  short 'n' <> long "name"
                                                <> metavar "CASTLE_NAME"
-                                               <> reader (pure . T.pack)
                                                <> help "The castle name to create."))
                         "Create a new castle." mempty
 
@@ -93,6 +92,12 @@ main = do
 pinfo :: Parser a -> String -> InfoMod a -> ParserInfo a
 pinfo p desc imod = info (helper <*> p)
                          (fullDesc <> progDesc desc <> imod)
+
+textOption :: Mod OptionFields T.Text -> Parser T.Text
+textOption fields = nullOption (reader (pure . T.pack) <> fields)
+
+fileOption :: Mod OptionFields FilePath -> Parser FilePath
+fileOption fields = nullOption (reader (pure . decodeString) <> fields)
 
 data CastleOpts
         = CastleOpts
