@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 
 module Main where
@@ -51,22 +52,20 @@ withSandbox name onExists onFail = do
         then onExists sandboxDir
         else onFail sandboxDir
 
--- Command functions
+-- Command function
 
-castleList :: Sh ()
-castleList =   liftIO (fmap (FS.</> "castles") castleDir)
-           >>= ls
-           >>= mapM_ (echo . toTextIgnore . basename)
+castle :: CastleCmd -> Sh ()
+castle ListCmd =   liftIO (fmap (FS.</> "castles") castleDir)
+               >>= ls
+               >>= mapM_ (echo . toTextIgnore . basename)
 
-castleNew :: T.Text -> Sh ()
-castleNew castleName = withSandbox
+castle NewCmd{..} = withSandbox
     castleName
     (const $ errorExit $ "Sandbox " <> castleName <> " already exists.")
     (\d -> mkdir_p d >> chdir d
             (sandbox_ "init" ["--sandbox=" <> toTextIgnore d]))
 
-castleUse :: T.Text -> Sh ()
-castleUse castleName = withSandbox
+castle UseCmd{..} = withSandbox
     castleName
     (\d -> pwd >>= cp (d FS.</> "cabal.sandbox.config"))
     (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.\
@@ -76,15 +75,11 @@ castleUse castleName = withSandbox
 
 main :: IO ()
 main = do
-    cfg <- execParser opts
+    CastleOpts{..} <- execParser opts
 
     shelly $ verbosely $ do
         installCastle
-
-        case mode cfg of
-            ListCmd           -> castleList
-            NewCmd castleName -> castleNew castleName
-            UseCmd castleName -> castleUse castleName
+        castle mode
 
     where
         opts' =   CastleOpts
