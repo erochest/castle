@@ -29,7 +29,7 @@ cabal_ = command1_ "cabal" []
 sandbox_ :: T.Text -> [T.Text] -> Sh ()
 sandbox_ cmd = cabal_ "sandbox" . (cmd:)
 
--- Workflow functions
+-- Workflow and utility functions
 
 installCastle :: Sh ()
 installCastle = do
@@ -38,6 +38,10 @@ installCastle = do
         mkdirTree $ (filename castle) # leaves ["castles"]
     where (#)    = Node
           leaves = map (# [])
+
+getSandboxDir :: T.Text -> Sh FilePath
+getSandboxDir name =
+    liftIO $ fmap ((FS.</> S.fromText name) . (FS.</> "castles")) castleDir
 
 -- Command functions
 
@@ -48,15 +52,22 @@ castleList =   liftIO (fmap (FS.</> "castles") castleDir)
 
 castleNew :: T.Text -> Sh ()
 castleNew castleName = do
-    sandboxDir <- liftIO $ fmap ( (FS.</> S.fromText castleName)
-                                . (FS.</> "castles"))
-                                castleDir
+    sandboxDir <- getSandboxDir castleName
     exists     <- test_d sandboxDir
     if exists
         then errorExit $ "Sandbox " <> castleName <> " already exists."
         else
             mkdir_p sandboxDir >> chdir sandboxDir
                 (sandbox_ "init" ["--sandbox=" <> toTextIgnore sandboxDir])
+
+castleUse :: T.Text -> Sh ()
+castleUse castleName = do
+    sandboxDir <- getSandboxDir castleName
+    exists     <- test_d sandboxDir
+    if exists
+        then pwd >>= cp (sandboxDir FS.</> "cabal.sandbox.config")
+        else errorExit $ "Sandbox " <> castleName <> " does not exist.\
+                         \ Create it with 'sandbox new'."
 
 -- Main
 
@@ -70,18 +81,20 @@ main = do
         case mode cfg of
             ListCmd           -> castleList
             NewCmd castleName -> castleNew castleName
+            UseCmd castleName -> castleUse castleName
 
     where
         opts' =   CastleOpts
               <$> subparser (  O.command "list" listCmd
                             <> O.command "new"  newCmd
+                            <> O.command "use"  useCmd
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
-        newCmd  = pinfo (NewCmd <$> textOption (  short 'n' <> long "name"
-                                               <> metavar "CASTLE_NAME"
-                                               <> help "The castle name to create."))
+        newCmd  = pinfo (NewCmd <$> castleNameArg "The name of the castle to create.")
                         "Create a new castle." mempty
+        useCmd  = pinfo (UseCmd <$> castleNameArg "The name of the castle to use.")
+                        "Use an existing castle." mempty
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
@@ -99,6 +112,12 @@ textOption fields = nullOption (reader (pure . T.pack) <> fields)
 fileOption :: Mod OptionFields FilePath -> Parser FilePath
 fileOption fields = nullOption (reader (pure . decodeString) <> fields)
 
+textArg :: String -> String -> Parser T.Text
+textArg meta helpText = argument (Just . T.pack) (metavar meta <> help helpText)
+
+castleNameArg :: String -> Parser T.Text
+castleNameArg = textArg "CASTLE_NAME"
+
 data CastleOpts
         = CastleOpts
         { mode :: CastleCmd
@@ -107,5 +126,6 @@ data CastleOpts
 data CastleCmd
         = ListCmd
         | NewCmd { castleName :: T.Text }
+        | UseCmd { castleName :: T.Text }
         deriving (Show)
 
