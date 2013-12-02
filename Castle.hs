@@ -5,6 +5,7 @@
 module Main where
 
 
+import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                 as T
 import           Data.Tree
@@ -71,6 +72,17 @@ castle UseCmd{..} = withSandbox
     (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.\
                          \ Create it with 'sandbox new'.")
 
+castle CurrentCmd = do
+    configFile <- (FS.</> "cabal.sandbox.config") <$> pwd
+    whenM (not <$> test_f configFile) $
+        errorExit "No sandbox in this directory."
+    config <- T.lines <$> readfile configFile
+    maybe (errorExit "No 'prefix:' line in configuration file.")
+          (echo . toTextIgnore . FS.basename . FS.fromText . T.drop 10)
+          . listToMaybe
+          $ filter (T.isPrefixOf "  prefix: ") config
+
+
 -- Main
 
 main :: IO ()
@@ -83,9 +95,10 @@ main = do
 
     where
         opts' =   CastleOpts
-              <$> subparser (  O.command "list" listCmd
-                            <> O.command "new"  newCmd
-                            <> O.command "use"  useCmd
+              <$> subparser (  O.command "list"    listCmd
+                            <> O.command "new"     newCmd
+                            <> O.command "use"     useCmd
+                            <> O.command "current" currCmd
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
@@ -93,6 +106,8 @@ main = do
                         "Create a new castle." mempty
         useCmd  = pinfo (UseCmd <$> castleNameArg "The name of the castle to use.")
                         "Use an existing castle." mempty
+        currCmd = pinfo (pure CurrentCmd) "Display the current castle name."
+                        mempty
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
@@ -125,5 +140,6 @@ data CastleCmd
         = ListCmd
         | NewCmd { castleName :: T.Text }
         | UseCmd { castleName :: T.Text }
+        | CurrentCmd
         deriving (Show)
 
