@@ -43,6 +43,14 @@ getSandboxDir :: T.Text -> Sh FilePath
 getSandboxDir name =
     liftIO $ fmap ((FS.</> S.fromText name) . (FS.</> "castles")) castleDir
 
+withSandbox :: T.Text -> (FilePath -> Sh ()) -> (FilePath -> Sh ()) -> Sh ()
+withSandbox name onExists onFail = do
+    sandboxDir <- getSandboxDir name
+    exists     <- test_d sandboxDir
+    if exists
+        then onExists sandboxDir
+        else onFail sandboxDir
+
 -- Command functions
 
 castleList :: Sh ()
@@ -51,23 +59,18 @@ castleList =   liftIO (fmap (FS.</> "castles") castleDir)
            >>= mapM_ (echo . toTextIgnore . basename)
 
 castleNew :: T.Text -> Sh ()
-castleNew castleName = do
-    sandboxDir <- getSandboxDir castleName
-    exists     <- test_d sandboxDir
-    if exists
-        then errorExit $ "Sandbox " <> castleName <> " already exists."
-        else
-            mkdir_p sandboxDir >> chdir sandboxDir
-                (sandbox_ "init" ["--sandbox=" <> toTextIgnore sandboxDir])
+castleNew castleName = withSandbox
+    castleName
+    (const $ errorExit $ "Sandbox " <> castleName <> " already exists.")
+    (\d -> mkdir_p d >> chdir d
+            (sandbox_ "init" ["--sandbox=" <> toTextIgnore d]))
 
 castleUse :: T.Text -> Sh ()
-castleUse castleName = do
-    sandboxDir <- getSandboxDir castleName
-    exists     <- test_d sandboxDir
-    if exists
-        then pwd >>= cp (sandboxDir FS.</> "cabal.sandbox.config")
-        else errorExit $ "Sandbox " <> castleName <> " does not exist.\
-                         \ Create it with 'sandbox new'."
+castleUse castleName = withSandbox
+    castleName
+    (\d -> pwd >>= cp (d FS.</> "cabal.sandbox.config"))
+    (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.\
+                         \ Create it with 'sandbox new'.")
 
 -- Main
 
