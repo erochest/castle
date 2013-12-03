@@ -53,6 +53,9 @@ withSandbox name onExists onFail = do
         then onExists sandboxDir
         else onFail sandboxDir
 
+getConfigFile :: Sh FilePath
+getConfigFile = (FS.</> "cabal.sandbox.config") <$> pwd
+
 -- Command function
 
 castle :: CastleCmd -> Sh ()
@@ -73,7 +76,7 @@ castle UseCmd{..} = withSandbox
                          \ Create it with 'sandbox new'.")
 
 castle CurrentCmd = do
-    configFile <- (FS.</> "cabal.sandbox.config") <$> pwd
+    configFile <- getConfigFile
     whenM (not <$> test_f configFile) $
         errorExit "No sandbox in this directory."
     config <- T.lines <$> readfile configFile
@@ -82,6 +85,16 @@ castle CurrentCmd = do
           . listToMaybe
           $ filter (T.isPrefixOf "  prefix: ") config
 
+castle RemoveCmd = do
+    configFile <- getConfigFile
+    whenM (not <$> test_f configFile) $
+        errorExit "No sandbox in this directory."
+    rm configFile
+
+castle DeleteCmd{..} = withSandbox
+    castleName
+    rm_rf
+    (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.")
 
 -- Main
 
@@ -99,6 +112,8 @@ main = do
                             <> O.command "new"     newCmd
                             <> O.command "use"     useCmd
                             <> O.command "current" currCmd
+                            <> O.command "remove"  rmCmd
+                            <> O.command "delete"  delCmd
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
@@ -108,6 +123,10 @@ main = do
                         "Use an existing castle." mempty
         currCmd = pinfo (pure CurrentCmd) "Display the current castle name."
                         mempty
+        rmCmd   = pinfo (pure RemoveCmd) "Removes the sandbox from the current directory."
+                        mempty
+        delCmd  = pinfo (DeleteCmd <$> castleNameArg "The name of the castle to delete.")
+                        "Deletes the castle." mempty
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
@@ -138,8 +157,10 @@ data CastleOpts
 
 data CastleCmd
         = ListCmd
-        | NewCmd { castleName :: T.Text }
-        | UseCmd { castleName :: T.Text }
+        | NewCmd    { castleName :: T.Text }
+        | UseCmd    { castleName :: T.Text }
         | CurrentCmd
+        | RemoveCmd
+        | DeleteCmd { castleName :: T.Text }
         deriving (Show)
 
