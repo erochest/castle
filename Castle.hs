@@ -5,6 +5,7 @@
 module Main where
 
 
+import           Control.Monad             (void)
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                 as T
@@ -96,6 +97,9 @@ castle DeleteCmd{..} = withSandbox
     rm_rf
     (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.")
 
+castle ClearCmd{..} =
+    withSandbox castleName rm_rf (const $ return ()) >> castle (NewCmd castleName)
+
 -- Main
 
 main :: IO ()
@@ -114,6 +118,7 @@ main = do
                             <> O.command "current" currCmd
                             <> O.command "remove"  rmCmd
                             <> O.command "delete"  delCmd
+                            <> O.command "clear"   clrCmd
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
@@ -127,6 +132,8 @@ main = do
                         mempty
         delCmd  = pinfo (DeleteCmd <$> castleNameArg "The name of the castle to delete.")
                         "Deletes the castle." mempty
+        clrCmd  = pinfo (ClearCmd <$> castleNameArg "The name of the castle to clear.")
+                        "Clears a castle by deleting and re-creating it." mempty
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
@@ -162,5 +169,6 @@ data CastleCmd
         | CurrentCmd
         | RemoveCmd
         | DeleteCmd { castleName :: T.Text }
+        | ClearCmd  { castleName :: T.Text }
         deriving (Show)
 
