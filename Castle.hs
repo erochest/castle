@@ -5,7 +5,7 @@
 module Main where
 
 
-import           Control.Monad             (void)
+import           Control.Monad
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                 as T
@@ -100,6 +100,13 @@ castle DeleteCmd{..} = withSandbox
 castle ClearCmd{..} =
     withSandbox castleName rm_rf (const $ return ()) >> castle (NewCmd castleName)
 
+castle SearchCmd{..} =
+        liftIO (fmap (FS.</> "castles") castleDir)
+    >>= ls
+    >>= fmap (filter (T.isInfixOf searchQuery) . map (toTextIgnore . basename))
+            . filterM test_d
+    >>= mapM_ echo
+
 -- Main
 
 main :: IO ()
@@ -119,6 +126,7 @@ main = do
                             <> O.command "remove"  rmCmd
                             <> O.command "delete"  delCmd
                             <> O.command "clear"   clrCmd
+                            <> O.command "search"  srchCmd
                             )
 
         listCmd = pinfo (pure ListCmd) "List sand castles." mempty
@@ -134,6 +142,9 @@ main = do
                         "Deletes the castle." mempty
         clrCmd  = pinfo (ClearCmd <$> castleNameArg "The name of the castle to clear.")
                         "Clears a castle by deleting and re-creating it." mempty
+        srchCmd = pinfo (SearchCmd <$> textArg "QUERY" "Search the castles\
+                                                       \ for one matching the name.")
+                        "Searches for a castle with a name containing the QUERY." mempty
 
         opts    = pinfo opts' "Manage shared cabal sandboxes."
                         (header "castle - manage shared cabal sandboxes.")
@@ -164,11 +175,12 @@ data CastleOpts
 
 data CastleCmd
         = ListCmd
-        | NewCmd    { castleName :: T.Text }
-        | UseCmd    { castleName :: T.Text }
+        | NewCmd    { castleName  :: T.Text }
+        | UseCmd    { castleName  :: T.Text }
         | CurrentCmd
         | RemoveCmd
-        | DeleteCmd { castleName :: T.Text }
-        | ClearCmd  { castleName :: T.Text }
+        | DeleteCmd { castleName  :: T.Text }
+        | ClearCmd  { castleName  :: T.Text }
+        | SearchCmd { searchQuery :: T.Text }
         deriving (Show)
 
