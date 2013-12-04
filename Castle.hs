@@ -54,6 +54,10 @@ withSandbox name onExists onFail = do
         then onExists sandboxDir
         else onFail sandboxDir
 
+withSandbox' :: T.Text -> (FilePath -> Sh ()) -> Sh ()
+withSandbox' name onExists = withSandbox name onExists noop
+    where noop = const $ return ()
+
 getConfigFile :: Sh FilePath
 getConfigFile = (FS.</> "cabal.sandbox.config") <$> pwd
 
@@ -101,7 +105,7 @@ castle DeleteCmd{..} = withSandbox
     (const $ errorExit $ "Sandbox " <> castleName <> " does not exist.")
 
 castle ClearCmd{..} =
-    withSandbox castleName rm_rf (const $ return ()) >> castle (NewCmd castleName)
+    withSandbox' castleName rm_rf >> castle (NewCmd castleName)
 
 castle SearchCmd{..} =
     mapM_ echo =<< filter (T.isInfixOf searchQuery) <$> listCastles
