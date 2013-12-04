@@ -57,12 +57,15 @@ withSandbox name onExists onFail = do
 getConfigFile :: Sh FilePath
 getConfigFile = (FS.</> "cabal.sandbox.config") <$> pwd
 
+listCastles :: Sh [T.Text]
+listCastles =   liftIO (fmap (FS.</> "castles") castleDir)
+            >>= ls
+            >>= fmap (map (toTextIgnore . basename)) . filterM test_d
+
 -- Command function
 
 castle :: CastleCmd -> Sh ()
-castle ListCmd =   liftIO (fmap (FS.</> "castles") castleDir)
-               >>= ls
-               >>= mapM_ (echo . toTextIgnore . basename)
+castle ListCmd = mapM_ echo =<< listCastles
 
 castle NewCmd{..} = withSandbox
     castleName
@@ -101,11 +104,7 @@ castle ClearCmd{..} =
     withSandbox castleName rm_rf (const $ return ()) >> castle (NewCmd castleName)
 
 castle SearchCmd{..} =
-        liftIO (fmap (FS.</> "castles") castleDir)
-    >>= ls
-    >>= fmap (filter (T.isInfixOf searchQuery) . map (toTextIgnore . basename))
-            . filterM test_d
-    >>= mapM_ echo
+    mapM_ echo =<< filter (T.isInfixOf searchQuery) <$> listCastles
 
 -- Main
 
