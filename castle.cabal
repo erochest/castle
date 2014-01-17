@@ -41,11 +41,8 @@ executable castle
   build-depends:       base >=4.6 && <4.7
                      -- , cabal-install >=1.18.0
                      , shelly
-                     , errors
                      , system-filepath
                      , system-fileio
-                     , lens
-                     , configurator
                      , optparse-applicative
                      , text
                      , containers
