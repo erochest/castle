@@ -36,7 +36,12 @@ bug-reports:         https://github.com/erochest/castle/issues
 
 executable castle
   main-is:             Castle.hs
-  -- other-modules:       
+  other-modules:       Castle.Commands
+                     , Castle.Opts
+                     , Castle.Paths
+                     , Castle.Shell
+                     , Castle.Types
+                     , Castle.Utils
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.7
                      -- , cabal-install >=1.18.0
