@@ -39,35 +39,38 @@ castleNameArg = textArg "CASTLE_NAME"
 
 opts' :: Parser CastleOpts
 opts' =   CastleOpts
-      <$> subparser (  O.command "list"    listCmd
-                    <> O.command "new"     newCmd
-                    <> O.command "use"     useCmd
-                    <> O.command "current" currCmd
-                    <> O.command "remove"  rmCmd
-                    <> O.command "delete"  delCmd
-                    <> O.command "clear"   clrCmd
-                    <> O.command "search"  srchCmd
+      <$> subparser (  O.command "list"       listCmd
+                    <> O.command "new"        newCmd
+                    <> O.command "use"        useCmd
+                    <> O.command "current"    currCmd
+                    <> O.command "remove"     rmCmd
+                    <> O.command "delete"     delCmd
+                    <> O.command "clear"      clrCmd
+                    <> O.command "search"     srchCmd
+                    <> O.command "add-source" addSrcCmd
                     )
 
 listCmd, newCmd, useCmd, currCmd, rmCmd, delCmd, clrCmd
-       , srchCmd :: ParserInfo CastleCmd
+       , srchCmd, addSrcCmd :: ParserInfo CastleCmd
 
-listCmd = pinfo (pure ListCmd) "List sand castles." mempty
-newCmd  = pinfo (NewCmd <$> castleNameArg "The name of the castle to create.")
-                "Create a new castle." mempty
-useCmd  = pinfo (UseCmd <$> castleNameArg "The name of the castle to use.")
-                "Use an existing castle." mempty
-currCmd = pinfo (pure CurrentCmd) "Display the current castle name."
-                mempty
-rmCmd   = pinfo (pure RemoveCmd) "Removes the sandbox from the current directory."
-                mempty
-delCmd  = pinfo (DeleteCmd <$> castleNameArg "The name of the castle to delete.")
-                "Deletes the castle." mempty
-clrCmd  = pinfo (ClearCmd <$> castleNameArg "The name of the castle to clear.")
-                "Clears a castle by deleting and re-creating it." mempty
-srchCmd = pinfo (SearchCmd <$> textArg "QUERY" "Search the castles\
-                                                \ for one matching the name.")
-                "Searches for a castle with a name containing the QUERY." mempty
+listCmd   = pinfo (pure ListCmd) "List sand castles." mempty
+newCmd    = pinfo (NewCmd <$> castleNameArg "The name of the castle to create.")
+                  "Create a new castle." mempty
+useCmd    = pinfo (UseCmd <$> castleNameArg "The name of the castle to use.")
+                  "Use an existing castle." mempty
+currCmd   = pinfo (pure CurrentCmd) "Display the current castle name."
+                  mempty
+rmCmd     = pinfo (pure RemoveCmd) "Removes the sandbox from the current directory."
+                  mempty
+delCmd    = pinfo (DeleteCmd <$> castleNameArg "The name of the castle to delete.")
+                  "Deletes the castle." mempty
+clrCmd    = pinfo (ClearCmd <$> castleNameArg "The name of the castle to clear.")
+                  "Clears a castle by deleting and re-creating it." mempty
+srchCmd   = pinfo (SearchCmd <$> textArg "QUERY" "Search the castles\
+                                                  \ for one matching the name.")
+                  "Searches for a castle with a name containing the QUERY." mempty
+addSrcCmd = pinfo (AddSrcCmd <$> textArg "URI" "Currently, URI can be a file path.")
+                  "Installed an external package into the sandbox." mempty
 
 opts :: ParserInfo CastleOpts
 opts    = pinfo opts' "Manage shared cabal sandboxes."

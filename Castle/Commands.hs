@@ -12,6 +12,7 @@ import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text                 as T
 import           Filesystem.Path.CurrentOS
+import           Network.URI
 import           Prelude                   hiding (FilePath)
 import           Shelly                    hiding (fromText, (</>))
 
@@ -58,5 +59,8 @@ castle ClearCmd{..} =
 
 castle SearchCmd{..} =
     mapM_ echo =<< filter (T.isInfixOf searchQuery) <$> listCastles
+
+castle AddSrcCmd{..} =
+    inspect . parseURI $ T.unpack sourceUri
 
 
