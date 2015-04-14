@@ -38,7 +38,7 @@ executable castle
   main-is:             Castle.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.6 && <4.7
+  build-depends:       base >=4.6 && <5
                      -- , cabal-install >=1.18.0
                      , shelly
                      , system-filepath
@@ -54,7 +54,7 @@ test-suite castle-specs
   ghc-options:         -threaded -rtsopts
   hs-source-dirs:      specs
   main-is:             Specs.hs
-  build-depends:         base       == 4.6.*
+  build-depends:         base
                        , tasty
                        , tasty-golden
                        , tasty-quickcheck
