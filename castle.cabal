@@ -49,20 +49,6 @@ executable castle
   -- hs-source-dirs:      
   default-language:    Haskell2010
 
-test-suite castle-specs
-  type:                exitcode-stdio-1.0
-  ghc-options:         -threaded -rtsopts
-  hs-source-dirs:      specs
-  main-is:             Specs.hs
-  build-depends:         base
-                       , tasty
-                       , tasty-golden
-                       , tasty-quickcheck
-                       , tasty-hspec
-                       , hspec
-                       , QuickCheck
-  default-language:    Haskell2010
-
 source-repository this
   type:                git
   location:            git://github.com/erochest/castle.git
