@@ -43,7 +43,7 @@ executable castle
                      , shelly
                      , system-filepath
                      , system-fileio
-                     , optparse-applicative
+                     , optparse-applicative >=0.10 && <0.12
                      , text
                      , containers
   -- hs-source-dirs:      

@@ -156,13 +156,13 @@ pinfo :: Parser a -> String -> InfoMod a -> ParserInfo a
 pinfo p desc imod = info (helper <*> p) (fullDesc <> progDesc desc <> imod)
 
 textOption :: Mod OptionFields T.Text -> Parser T.Text
-textOption fields = nullOption (reader (pure . T.pack) <> fields)
+textOption fields = option (T.pack <$> str) fields
 
 fileOption :: Mod OptionFields FilePath -> Parser FilePath
-fileOption fields = nullOption (reader (pure . decodeString) <> fields)
+fileOption fields = option (decodeString <$> str) fields
 
 textArg :: String -> String -> Parser T.Text
-textArg meta helpText = argument (Just . T.pack) (metavar meta <> help helpText)
+textArg meta helpText = argument (T.pack <$> str) (metavar meta <> help helpText)
 
 castleNameArg :: String -> Parser T.Text
 castleNameArg = textArg "CASTLE_NAME"
