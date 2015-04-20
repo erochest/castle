@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                castle
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            A tool to manage shared cabal-install sandboxes.
 description:
   I really like having sandboxes baked into cabal-install.
